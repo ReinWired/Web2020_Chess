@@ -15,6 +15,40 @@ const echiquier = [
 // Sert à stocker le nombre de tours / le numéro de tour actuel
 let mouvementJoueur = 1;
 
+function afficheEchiquier() {
+  // S'occupe de la première ligne d'affichage qui ne peut pas faire partie de la boucle
+  console.log(' _   _'.repeat(10));
+  // S'occupe de toutes les autres lignes en concaténant les valeurs de chaque ligne/array de l'échiquier avec un séparateur précisé et entoure cette ligne de bords
+  for (let i = 0; i < echiquier.length; i++) {
+      console.log('|_' + echiquier[i].join("_|_") + '_|');
+  }
+}
+
+// Permet de convertir une lettre en son index qui sera utilisé pour naviguer dans le tableau "echiquier"
+function convertisseur(lettre) {
+  const alphabet = [' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', ' '];
+
+  indexLettre = alphabet.indexOf(lettre);
+
+  return indexLettre;
+}
+
+// Permet de déplacer une pièce vers une nouvelle position et de rendre la case de départ vide
+function deplacementPiece(Y, X, nouveauY, nouveauX) {
+  let resultatValidationMouvement = validationMouvement(Y, X, nouveauY, nouveauX);
+  let mouvementValide = resultatValidationMouvement[0]; // Contient un booléen indiquant si le mouvement est valide
+  let messageMouvement = resultatValidationMouvement[1]; // Contient un message à afficher dans le cas d'une erreur
+
+  if (mouvementValide === true) {
+    echiquier[nouveauY][nouveauX] = echiquier[Y][X]; // Assigne à la position finale la valeur de la position de départ
+    echiquier[Y][X] = ' - '; // "Vide" la position de départ
+    mouvementJoueur++; // Incrémente le nombre de tours si le mouvement à eu lieu
+    afficheEchiquier();
+  } else {
+    console.log(messageMouvement); // Si le mouvement est invalide affiche l'erreur
+  }
+}
+
 // Fonction qui sert à un indiquer si un mouvement est valide ou non. Renvoie un array du style [booléen, message]
 function validationMouvement(Y, X, nouveauY, nouveauX) {
   if ( Y === nouveauY && X === nouveauX ) {
@@ -52,53 +86,87 @@ function validationMouvement(Y, X, nouveauY, nouveauX) {
 
   // Le switch servira à vérifier des conditions spécifiques selon le type de la pièce
   switch (type) {
-    case 'P':
+    case 'P': return validationPion(Y, X, nouveauY, nouveauX, couleur, couleurCible);
     case 'T': return validationTour(Y, X, nouveauY, nouveauX);
     case 'C': return validationCavalier(Y, X, nouveauY, nouveauX);
-    case 'F':
-    case 'D':
+    case 'F': return validationFou(Y, X, nouveauY, nouveauX);
+    case 'D': return validationDame(Y, X, nouveauY, nouveauX);
     case 'R': return validationRoi(Y, X, nouveauY, nouveauX);
   }
 }
 
+
 // Sert à vérifier si une pièce se trouve sur le chemin à parcourir. Renvoie un booléen
 function validationCollision(Y, X, nouveauY, nouveauX) {
+
+  // Vérifie les sens de déplacements sur les axes Y (vertical) et X (horizontal)
+  if (X < nouveauX) {
+    let sensX = 1;
+  } else {
+    let sensX = -1;
+  }
+
+  if (Y < nouveauY) {
+    let sensY = 1;
+  } else {
+    let sensY = -1;
+  }
+
   if ( X !== nouveauX ) { // Vérifie si on bouge sur l'axe X
 
-    if (X < nouveauX) {
-        for (let i = X + 1; i < nouveauX; i++) {
-          if (echiquier[Y][i] !== ' - ') {
-            return false;
-          }
-        }
-    } else {
-      for (let i = X - 1; i > nouveauX; i--) {
-          if (echiquier[Y][i] !== ' - ') {
-            return false;
-          }
+    for (let i = X + sensX; i < nouveauX; i += sensX) {
+      if (echiquier[Y][i] !== ' - ') {
+        return false;
       }
     }
 
   } else if (Y !== nouveauY) { // Vérifie si on bouge sur l'axe Y
 
-    if (Y < nouveauY) {
-        for (let i = Y + 1; i < nouveauY; i++) {
-          if (echiquier[i][X] !== ' - ') {
-            return false;
-          }
-        }
-    } else {
-      for (let i = Y - 1; i > nouveauY; i--) {
-          if (echiquier[i][X] !== ' - ') {
-            return false;
-          }
+    for (let i = Y + sensY; i < nouveauY; i += sensY) {
+      if (echiquier[i][X] !== ' - ') {
+        return false;
       }
     }
 
-  }
+  } else if ( X !== nouveauX && Y !== nouveauY ) {
 
-  return true;
+    // i s'occupe de l'axe des Y (vertical) et j de l'axe des X (horizontal)
+    for (let i = Y + sensY, j = X + sensX; i < nouveauX; i += sensX, j += sensY) {
+      if (echiquier[i][j] !== ' - ') {
+        return false;
+      }
+    }
+
+  }
+
+  return true;
 }
+
+
+function validationPion(Y, X, nouveauY, nouveauX, couleur, couleurCible) {
+  if ( !( couleur === 'B' && nouveauY > Y || couleur === 'N' && nouveauY < Y ) ) {
+      return [false, `Le pion ne peut qu'avancer.`];
+  }
+
+  if ( Math.abs(nouveauX - X === 1) && (couleurCible === ' ' && couleur === couleurCible) ) {
+      return [false, `Le pion ne peut se déplacer en diagonale d'une case que pour manger une pièce.`];
+  }
+
+  
+  if ( ( Math.abs(nouveauY - Y) <= 2 && Math.abs(nouveauX - X) === 0 ) ) {
+    if ( ( Math.abs(nouveauY - Y) === 1 && Math.abs(nouveauX - X) === 0 ) ) {
+      return [true, `Tout est okay !`];
+    } else if ( !(Y === 2 || Y === 7) ) {
+      return [false, `Le pion ne peut avancer de 2 cases en ligne que à son premier déplacement.`];
+    } else {
+      return [true, `Tout est okay !`];
+    }
+  }
+  
+
+  return [true, `Tout est okay !`];
+}
+
 
 function validationTour(Y, X, nouveauY, nouveauX) {
   if ( !( Math.abs(X - nouveauX) > 0 && Math.abs(Y - nouveauY) === 0 ||
@@ -113,6 +181,44 @@ function validationTour(Y, X, nouveauY, nouveauX) {
   return [true, `Tout est okay !`];
 }
 
+
+function validationCavalier(Y, X, nouveauY, nouveauX) {
+  if ( !( (Math.abs(X - nouveauX) + Math.abs(Y - nouveauY)) === 3 && Math.abs(X - nouveauX) >= 1 && Math.abs(Y - nouveauY) >= 1 ) ) {
+    return [false, `Le cavalier peut seulement se déplacer de 3 cases au total et en 'L'.`];
+  }
+
+  return [true, `Tout est okay !`];
+}
+
+
+function validationFou(Y, X, nouveauY, nouveauX) {
+  if ( !( Math.abs(nouveauY - Y) === Math.abs(nouveauX - X) ) ) {
+    return [false, `Le fou ne peut se déplacer qu'en diagonale.`];
+  }
+
+  if ( validationCollision(Y, X, nouveauY, nouveauX) === false ) {
+    return [false, `Il y a une pièce présente sur le chemin du fou.`];
+  }
+
+  return [true, `Tout est okay !`];
+}
+
+
+function validationDame(Y, X, nouveauY, nouveauX) {
+  if ( !( Math.abs(X - nouveauX) > 0 && Math.abs(Y - nouveauY) === 0 ||
+       Math.abs(Y - nouveauY) > 0 && Math.abs(X - nouveauX) === 0 ||
+       Math.abs(nouveauY - Y) === Math.abs(nouveauX - X) ) ) {
+    return [false, `La dame ne peut se déplacer qu'en ligne ou en diagonale.`];
+  }
+
+  if ( validationCollision(Y, X, nouveauY, nouveauX) === false ) {
+    return [false, `Il y a une pièce présente sur le chemin de la dame.`];
+  }
+
+  return [true, `Tout est okay !`];
+}
+
+
 function validationRoi(Y, X, nouveauY, nouveauX) {
   if ( !( Math.abs(X - nouveauX) === 1 && Math.abs(Y - nouveauY) === 1 ||
       Math.abs(X - nouveauX) === 1 && Math.abs(Y - nouveauY) === 0 ||
@@ -123,46 +229,10 @@ function validationRoi(Y, X, nouveauY, nouveauX) {
   return [true, `Tout est okay !`];
 }
 
-function validationCavalier(Y, X, nouveauY, nouveauX) {
-  if ( !( (Math.abs(X - nouveauX) + Math.abs(Y - nouveauY)) === 3 && Math.abs(X - nouveauX) >= 1 && Math.abs(Y - nouveauY) >= 1 ) ) {
-    return [false, `Le cavalier peut seulement se déplacer de 3 cases au total et en 'L'.`];
-  }
-
-  return [true, `Tout est okay !`];
-}
-
-// Permet de convertir une lettre en son index qui sera utilisé pour naviguer dans le tableau "echiquier"
-function convertisseur(lettre) {
-  const alphabet = [' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', ' '];
-
-  indexLettre = alphabet.indexOf(lettre);
-
-  return indexLettre;
-}
-
-// Permet de déplacer une pièce vers une nouvelle position et de rendre la case de départ vide
-function deplacementPiece(Y, X, nouveauY, nouveauX) {
-  let resultatValidationMouvement = validationMouvement(Y, X, nouveauY, nouveauX);
-  let mouvementValide = resultatValidationMouvement[0]; // Contient un booléen indiquant si le mouvement est valide
-  let messageMouvement = resultatValidationMouvement[1]; // Contient un message à afficher dans le cas d'une erreur
-
-  if (mouvementValide === true) {
-    echiquier[nouveauY][nouveauX] = echiquier[Y][X]; // Assigne à la position finale la valeur de la position de départ
-    echiquier[Y][X] = ' - '; // "Vide" la position de départ
-    mouvementJoueur++; // Incrémente le nombre de tours si le mouvement à eu lieu
-    afficheEchiquier();
-  } else {
-    console.log(messageMouvement); // Si le mouvement est invalide affiche l'erreur
-  }
-}
-
-function afficheEchiquier() {
-  // S'occupe de la première ligne d'affichage qui ne peut pas faire partie de la boucle
-  console.log(' _   _'.repeat(10));
-  // S'occupe de toutes les autres lignes en concaténant les valeurs de chaque ligne/array de l'échiquier avec un séparateur précisé et entoure cette ligne de bords
-  for (let i = 0; i < echiquier.length; i++) {
-      console.log('|_' + echiquier[i].join("_|_") + '_|');
-  }
-}
 
 afficheEchiquier();
+
+deplacementPiece(2, 1, 4, 1);
+deplacementPiece(7, 2, 6, 2);
+deplacementPiece(4, 1, 5, 1);
+deplacementPiece(6, 2, 5, 1);
