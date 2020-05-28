@@ -33,6 +33,41 @@ function convertisseur(lettre) {
   return indexLettre;
 }
 
+// "12E4"
+function entreeUtilisateur(stringDeplacement) {
+  if ( stringDeplacement === undefined ) {
+     return "Vous devez rentrer des positions de départ et d'arrivée";
+  }
+
+  // Supprime les espaces blancs dans le texte de l'utilisateur grâce à uns expression régulière (Regexp)
+  let noWhiteSpace = stringDeplacement.replace(/\s/g, '');
+
+  if ( noWhiteSpace.length !== 4 ) {
+    return "Vous avez rentrez trop de caractères, veuillez rentrer un maximum de 4 lettre et chiffres.";
+  }
+
+  if (typeof noWhiteSpace[0] !== "string" || typeof noWhiteSpace[2] !== "string") {
+        return "Le premier et le troisième caractères doivent être des lettres";
+  }
+
+  // Transforme le texte en majuscules pour permettre l'utilisation dans la fonction convertisseur
+  let upperCaseNoWhiteSpace = noWhiteSpace.toUpperCase();
+
+  // On convertit les lettres en index grâce à la fonction convertisseur et on transforme les types string en type number
+  let X = convertisseur(upperCaseNoWhiteSpace[0]);
+  let nouveauX = convertisseur(upperCaseNoWhiteSpace[2]);
+  let Y = Number(upperCaseNoWhiteSpace[1]);
+  let nouveauY = Number(upperCaseNoWhiteSpace[3]);
+
+  if (typeof X !== "number" || typeof nouveauX !== "number") {
+        return "Le second et le quatrième caractères doivent être des nombres";
+  }
+  
+  console.log(Y, X, nouveauY, nouveauX);
+  deplacementPiece(Y, X, nouveauY, nouveauX);
+  return "Mouvement utilisateur était valide.";
+}
+
 // Permet de déplacer une pièce vers une nouvelle position et de rendre la case de départ vide
 function deplacementPiece(Y, X, nouveauY, nouveauX) {
   let resultatValidationMouvement = validationMouvement(Y, X, nouveauY, nouveauX);
@@ -98,27 +133,30 @@ function validationMouvement(Y, X, nouveauY, nouveauX) {
 
 // Sert à vérifier si une pièce se trouve sur le chemin à parcourir. Renvoie un booléen
 function validationCollision(Y, X, nouveauY, nouveauX) {
+  if ( Math.abs(X - nouveauX) === 1 || Math.abs(Y - nouveauY) === 1 ) {
+    return true;
+  }
 
   // Vérifie les sens de déplacements sur les axes Y (vertical) et X (horizontal)
+  let sensX = -1;
+  let sensY = -1;
+
   if (X < nouveauX) {
-    let sensX = 1;
-  } else {
-    let sensX = -1;
+    sensX = 1;
   }
 
   if (Y < nouveauY) {
-    let sensY = 1;
-  } else {
-    let sensY = -1;
+    sensY = 1;
   }
 
-  if ( X !== nouveauX ) { // Vérifie si on bouge sur l'axe X
+  if ( Y !== nouveauY && X !== nouveauX) {
 
-    for (let i = X + sensX; i < nouveauX; i += sensX) {
-      if (echiquier[Y][i] !== ' - ') {
-        return false;
-      }
-    }
+    // i s'occupe de l'axe des Y (vertical) et j de l'axe des X (horizontal)
+    for (let i = Y + sensY, j = X + sensX; i < nouveauY; i += sensY, j += sensX) {
+      if (echiquier[i][j] !== ' - ') {
+        return false;
+      }
+    }
 
   } else if (Y !== nouveauY) { // Vérifie si on bouge sur l'axe Y
 
@@ -128,12 +166,11 @@ function validationCollision(Y, X, nouveauY, nouveauX) {
       }
     }
 
-  } else if ( X !== nouveauX && Y !== nouveauY ) {
+  } else if ( X !== nouveauX ) { // Vérifie si on bouge sur l'axe X
 
-    // i s'occupe de l'axe des Y (vertical) et j de l'axe des X (horizontal)
-    for (let i = Y + sensY, j = X + sensX; i < nouveauX; i += sensX, j += sensY) {
-      if (echiquier[i][j] !== ' - ') {
-        return false;
+    for (let i = X + sensX; i < nouveauX; i += sensX) {
+      if (echiquier[Y][i] !== ' - ') {
+        return false;
       }
     }
 
@@ -148,7 +185,7 @@ function validationPion(Y, X, nouveauY, nouveauX, couleur, couleurCible) {
       return [false, `Le pion ne peut qu'avancer.`];
   }
 
-  if ( Math.abs(nouveauX - X === 1) && (couleurCible === ' ' && couleur === couleurCible) ) {
+  if ( Math.abs(Y - nouveauY) !== 1 && Math.abs(X - nouveauX) !== 1 || couleurCible === ' ') {
       return [false, `Le pion ne peut se déplacer en diagonale d'une case que pour manger une pièce.`];
   }
 
@@ -229,10 +266,7 @@ function validationRoi(Y, X, nouveauY, nouveauX) {
   return [true, `Tout est okay !`];
 }
 
-
+console.log("Les règles du jeu d'échecs peuvent se lire à l'adresse suivante: https://www.apprendre-les-echecs.com/wp-content/uploads/2018/04/regles_du_jeu_echecs_v4.pdf");
 afficheEchiquier();
 
-deplacementPiece(2, 1, 4, 1);
-deplacementPiece(7, 2, 6, 2);
-deplacementPiece(4, 1, 5, 1);
-deplacementPiece(6, 2, 5, 1);
+entreeUtilisateur("C2 B3");
